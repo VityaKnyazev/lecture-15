@@ -80,7 +80,6 @@ public class ProducersDAO implements DAO<Producer>{
 	public int delete(Producer producer) {
 		try {
 			int result = jdbcProducersDAO.update(DELETE, producer.getId());
-			producer = null;
 			return result;
 		} catch (DataAccessException e) {
 			logger.error(e.getMessage());

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -16,18 +17,46 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import by.itacademy.javaenterprise.knyazev.entities.Category;
+import liquibase.Contexts;
+import liquibase.LabelExpression;
+import liquibase.Liquibase;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.exception.LiquibaseException;
+import liquibase.resource.ClassLoaderResourceAccessor;
 
 public class CategoriesDAOTests {
 	private static DataSource ds;
 	private static JdbcTemplate jdbc;
 	private static Logger logger;
 	private static CategoriesDAO categoriesDAO;
-	
 
 	@BeforeAll
 	public static void setUp() {
-		ds = new DriverManagerDataSource("jdbc:postgresql://localhost/storage?useUnicode=true&characterEncoding=UTF-8",
-				"admin", "admin");
+
+		ds = new DriverManagerDataSource("jdbc:postgresql://localhost/testStorage?useUnicode=true&characterEncoding=UTF-8",
+				"test", "test");
+		
+		JdbcConnection jdbcConnection = null;
+		Liquibase liquibase = null;
+
+		try {
+			jdbcConnection = new JdbcConnection(ds.getConnection());
+			liquibase = new Liquibase("classpath:/liquibase/databases/dbchangelog.xml",
+					new ClassLoaderResourceAccessor(), jdbcConnection);
+			liquibase.update(new Contexts(), new LabelExpression());
+		} catch (SQLException | LiquibaseException e) {
+			e.printStackTrace();
+		} finally {
+			if (jdbcConnection != null || liquibase != null) {				
+				try {
+					liquibase.close();
+					jdbcConnection.close();					
+				} catch (LiquibaseException e) {
+					
+				}
+			}
+		}
+
 		jdbc = new JdbcTemplate(ds);
 		logger = LoggerFactory.getLogger(CategoriesDAO.class);
 		categoriesDAO = new CategoriesDAO(jdbc, logger);
@@ -84,7 +113,7 @@ public class CategoriesDAOTests {
 
 		assertEquals(0, result);
 	}
-	
+
 	@Test
 	public void whenInsertWithBadId() {
 		Category category = new Category(-2, "Тяжелая артилерия", "Не про еду");
@@ -100,7 +129,7 @@ public class CategoriesDAOTests {
 
 		assertEquals(0, result);
 	}
-	
+
 	@Test
 	public void whenUpdateCategory() {
 		Category category = new Category(3, "Плоды", "Плоды - овощи и фрукты плодовых растений");
@@ -117,10 +146,11 @@ public class CategoriesDAOTests {
 
 		assertEquals(0, result);
 	}
-	
+
 	@Test
 	public void whenUpdateWithBadId() {
-		Category category = new Category(-2, "Красные фрукты", "Определение не найдено, стоит поискать в учебниках истории");
+		Category category = new Category(-2, "Красные фрукты",
+				"Определение не найдено, стоит поискать в учебниках истории");
 		int result = categoriesDAO.save(category);
 
 		assertEquals(0, result);
@@ -133,25 +163,25 @@ public class CategoriesDAOTests {
 
 		assertEquals(0, result);
 	}
-	
+
 	@Test
 	public void whenDeleteLinkedValueInCategory() {
 		int id = 3;
-		
+
 		Category category = categoriesDAO.select(3);
-		
+
 		int result = categoriesDAO.delete(category);
 		assertNotNull(category);
 		assertEquals(category.getId(), id);
 		assertEquals(0, result);
 	}
-	
+
 	@Test
 	public void whenDeleteWithBadId() {
 		int id = -5;
-		
+
 		Category category = categoriesDAO.select(id);
-		
+
 		int result = categoriesDAO.delete(category);
 		assertEquals(0, result);
 	}

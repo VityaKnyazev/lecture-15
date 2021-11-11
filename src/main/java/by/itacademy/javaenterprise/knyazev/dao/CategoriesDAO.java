@@ -82,7 +82,6 @@ public class CategoriesDAO implements DAO<Category> {
 	public int delete(Category category) {
 		try {
 			int result = jdbcCategoriesDAO.update(DELETE, category.getId());
-			category = null;
 			return result;
 		} catch (DataAccessException e) {
 			logger.error(e.getMessage());

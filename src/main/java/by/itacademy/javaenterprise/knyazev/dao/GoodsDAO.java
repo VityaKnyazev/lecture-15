@@ -77,7 +77,7 @@ public class GoodsDAO implements DAO<Good>{
 				namedParameters.put("id", id);
 				return jdbcGoodsDAO.update(UPDATE, namedParameters);
 			}
-		} catch (DataAccessException e) {
+		} catch (RuntimeException e) {
 			logger.error(e.getMessage());
 			return 0;
 		}
@@ -87,7 +87,6 @@ public class GoodsDAO implements DAO<Good>{
 	public int delete(Good good) {
 		try {
 			int result = jdbcGoodsDAO.update(DELETE, Collections.singletonMap("id", good.getId()));
-			good = null;
 			return result;
 		} catch (DataAccessException e) {
 			logger.error(e.getMessage());
